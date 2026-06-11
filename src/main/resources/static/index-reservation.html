@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 CRUD 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #reservationForm { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        #reservationForm input, #reservationForm textarea, #reservationForm select { display: block; width: 300px; margin-bottom: 10px; padding: 8px; }
+        #reservationForm button { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #reservationList { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        #reservationList th, #reservationList td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #reservationList th { background-color: #f2f2f2; }
+        .action-buttons button { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>예약 관리</h1>
+
+    <h2>새 예약 추가</h2>
+    <div id="reservationForm">
+        <label for="lessonTime">수업 시간 (YYYY-MM-DDTHH:MM):</label>
+        <input type="datetime-local" id="lessonTime" required>
+
+        <label for="duration">수업 시간 (분):</label>
+        <input type="number" id="duration" placeholder="예: 60" required>
+
+        <label for="memo">메모:</label>
+        <textarea id="memo" placeholder="예약 특이사항"></textarea>
+
+        <label for="status">상태:</label>
+        <select id="status" required>
+            <option value="PENDING">대기중</option>
+            <option value="CONFIRMED">확정됨</option>
+            <option value="CANCELLED">취소됨</option>
+        </select>
+        <button onclick="createReservation()">예약 추가</button>
+    </div>
+
+    <h2>예약 목록</h2>
+    <table id="reservationList">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>수업 시간</th>
+                <th>수업 시간 (분)</th>
+                <th>메모</th>
+                <th>상태</th>
+                <th>작업</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 예약 목록이 여기에 로드됩니다 -->
+        </tbody>
+    </table>
+
+    <script>
+        const API_BASE_URL = '/api/reservations';
+
+        async function fetchReservations() {
+            try {
+                const response = await fetch(API_BASE_URL);
+                const reservations = await response.json();
+                const reservationListBody = document.querySelector('#reservationList tbody');
+                reservationListBody.innerHTML = ''; // 기존 목록 지우기
+
+                reservations.forEach(reservation => {
+                    const row = reservationListBody.insertRow();
+                    row.insertCell().textContent = reservation.id;
+                    row.insertCell().textContent = new Date(reservation.lessonTime).toLocaleString('ko-KR');
+                    row.insertCell().textContent = reservation.duration;
+                    row.insertCell().textContent = reservation.memo;
+                    row.insertCell().textContent = reservation.status;
+
+                    const actionsCell = row.insertCell();
+                    const editButton = document.createElement('button');
+                    editButton.textContent = '수정';
+                    editButton.onclick = () => editReservation(reservation);
+                    actionsCell.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '삭제';
+                    deleteButton.onclick = () => deleteReservation(reservation.id);
+                    actionsCell.appendChild(deleteButton);
+                });
+            } catch (error) {
+                console.error('예약 목록을 가져오는 중 오류 발생:', error);
+            }
+        }
+
+        async function createReservation() {
+            const lessonTime = document.getElementById('lessonTime').value;
+            const duration = document.getElementById('duration').value;
+            const memo = document.getElementById('memo').value;
+            const status = document.getElementById('status').value;
+
+            if (!lessonTime || !duration || !status) {
+                alert('수업 시간, 수업 시간(분), 상태는 필수 입력 항목입니다!');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lessonTime, duration: parseInt(duration), memo, status })
+                });
+                if (response.ok) {
+                    alert('예약이 성공적으로 생성되었습니다!');
+                    document.getElementById('lessonTime').value = '';
+                    document.getElementById('duration').value = '';
+                    document.getElementById('memo').value = '';
+                    document.getElementById('status').value = 'PENDING'; // 기본값으로 초기화
+                    fetchReservations(); // 목록 새로고침
+                } else {
+                    alert('예약 생성에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('예약 생성 중 오류 발생:', error);
+            }
+        }
+
+        async function updateReservation(id, updatedData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+                if (response.ok) {
+                    alert('예약이 성공적으로 업데이트되었습니다!');
+                    fetchReservations();
+                } else {
+                    alert('예약 업데이트에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('예약 업데이트 중 오류 발생:', error);
+            }
+        }
+
+        async function deleteReservation(id) {
+            if (!confirm('정말로 이 예약을 삭제하시겠습니까?')) {
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    alert('예약이 성공적으로 삭제되었습니다!');
+                    fetchReservations(); // 목록 새로고침
+                } else {
+                    alert('예약 삭제에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('예약 삭제 중 오류 발생:', error);
+            }
+        }
+
+        function editReservation(reservation) {
+            const newLessonTime = prompt('새 수업 시간을 입력하세요 (YYYY-MM-DDTHH:MM):', reservation.lessonTime.substring(0, 16));
+            if (newLessonTime === null) return;
+
+            const newDuration = prompt('새 수업 시간(분)을 입력하세요:', reservation.duration);
+            if (newDuration === null) return;
+
+            const newMemo = prompt('새 메모를 입력하세요:', reservation.memo);
+            if (newMemo === null) return;
+
+            const newStatus = prompt('새 상태를 입력하세요 (PENDING, CONFIRMED, CANCELLED):', reservation.status);
+            if (newStatus === null) return;
+
+            updateReservation(reservation.id, {
+                lessonTime: newLessonTime,
+                duration: parseInt(newDuration),
+                memo: newMemo,
+                status: newStatus
+            });
+        }
+
+        // 페이지 로드 시 예약 목록 불러오기
+        window.onload = fetchReservations;
+    </script>
+</body>
+</html>
