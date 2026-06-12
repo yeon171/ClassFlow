@@ -17,8 +17,8 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping
-    public Reservation createReservation(@RequestBody Reservation reservation) {
-        return reservationService.createReservation(reservation);
+    public Reservation createReservation(@RequestParam Long studentId, @RequestBody Reservation reservation) {
+        return reservationService.createReservation(studentId, reservation);
     }
 
     @GetMapping
@@ -34,22 +34,16 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Reservation> updateReservation(@PathVariable Long id, @RequestBody Reservation reservationDetails) {
-        try {
-            Reservation updatedReservation = reservationService.updateReservation(id, reservationDetails);
-            return ResponseEntity.ok(updatedReservation);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Reservation> updateReservation(@PathVariable Long id, @RequestParam Long studentId, @RequestBody Reservation reservationDetails) {
+        // 서비스에서 ResourceNotFoundException을 던지면 @ResponseStatus가 처리하므로 try-catch 제거
+        Reservation updatedReservation = reservationService.updateReservation(id, studentId, reservationDetails);
+        return ResponseEntity.ok(updatedReservation);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
-        try {
-            reservationService.deleteReservation(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        // 서비스에서 ResourceNotFoundException을 던지면 @ResponseStatus가 처리하므로 try-catch 제거
+        reservationService.deleteReservation(id);
+        return ResponseEntity.noContent().build();
     }
 }

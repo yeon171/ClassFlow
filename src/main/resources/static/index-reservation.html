@@ -20,6 +20,9 @@
 
     <h2>새 예약 추가</h2>
     <div id="reservationForm">
+        <label for="studentId">학생 ID:</label>
+        <input type="number" id="studentId" placeholder="예약을 할 학생의 ID" required>
+
         <label for="lessonTime">수업 시간 (YYYY-MM-DDTHH:MM):</label>
         <input type="datetime-local" id="lessonTime" required>
 
@@ -43,6 +46,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>학생 ID</th> <!-- 학생 ID 컬럼 추가 -->
                 <th>수업 시간</th>
                 <th>수업 시간 (분)</th>
                 <th>메모</th>
@@ -68,6 +72,7 @@
                 reservations.forEach(reservation => {
                     const row = reservationListBody.insertRow();
                     row.insertCell().textContent = reservation.id;
+                    row.insertCell().textContent = reservation.student ? reservation.student.id : 'N/A'; // 학생 ID 표시
                     row.insertCell().textContent = new Date(reservation.lessonTime).toLocaleString('ko-KR');
                     row.insertCell().textContent = reservation.duration;
                     row.insertCell().textContent = reservation.memo;
@@ -90,18 +95,19 @@
         }
 
         async function createReservation() {
+            const studentId = document.getElementById('studentId').value; // studentId 추가
             const lessonTime = document.getElementById('lessonTime').value;
             const duration = document.getElementById('duration').value;
             const memo = document.getElementById('memo').value;
             const status = document.getElementById('status').value;
 
-            if (!lessonTime || !duration || !status) {
-                alert('수업 시간, 수업 시간(분), 상태는 필수 입력 항목입니다!');
+            if (!studentId || !lessonTime || !duration || !status) {
+                alert('학생 ID, 수업 시간, 수업 시간(분), 상태는 필수 입력 항목입니다!');
                 return;
             }
 
             try {
-                const response = await fetch(API_BASE_URL, {
+                const response = await fetch(`${API_BASE_URL}?studentId=${studentId}`, { // studentId 쿼리 파라미터로 전송
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -110,6 +116,7 @@
                 });
                 if (response.ok) {
                     alert('예약이 성공적으로 생성되었습니다!');
+                    document.getElementById('studentId').value = ''; // studentId 초기화
                     document.getElementById('lessonTime').value = '';
                     document.getElementById('duration').value = '';
                     document.getElementById('memo').value = '';
@@ -123,9 +130,9 @@
             }
         }
 
-        async function updateReservation(id, updatedData) {
+        async function updateReservation(id, studentId, updatedData) { // studentId 인자 추가
             try {
-                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/${id}?studentId=${studentId}`, { // studentId 쿼리 파라미터로 전송
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -163,6 +170,9 @@
         }
 
         function editReservation(reservation) {
+            const newStudentId = prompt('새 학생 ID를 입력하세요:', reservation.student ? reservation.student.id : ''); // 학생 ID 입력받기
+            if (newStudentId === null) return;
+
             const newLessonTime = prompt('새 수업 시간을 입력하세요 (YYYY-MM-DDTHH:MM):', reservation.lessonTime.substring(0, 16));
             if (newLessonTime === null) return;
 
@@ -175,7 +185,7 @@
             const newStatus = prompt('새 상태를 입력하세요 (PENDING, CONFIRMED, CANCELLED):', reservation.status);
             if (newStatus === null) return;
 
-            updateReservation(reservation.id, {
+            updateReservation(reservation.id, parseInt(newStudentId), { // studentId 전달
                 lessonTime: newLessonTime,
                 duration: parseInt(newDuration),
                 memo: newMemo,

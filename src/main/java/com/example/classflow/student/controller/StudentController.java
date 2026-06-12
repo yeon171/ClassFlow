@@ -35,21 +35,15 @@ public class StudentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
-        try {
-            Student updatedStudent = studentService.updateStudent(id, studentDetails);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        // 서비스에서 ResourceNotFoundException을 던지면 @ResponseStatus가 처리하므로 try-catch 제거
+        Student updatedStudent = studentService.updateStudent(id, studentDetails);
+        return ResponseEntity.ok(updatedStudent);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
-        try {
-            studentService.deleteStudent(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        // 서비스에서 ResourceNotFoundException을 던지면 @ResponseStatus가 처리하므로 try-catch 제거
+        studentService.deleteStudent(id);
+        return ResponseEntity.noContent().build();
     }
 }

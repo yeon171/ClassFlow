@@ -1,5 +1,6 @@
 package com.example.classflow.student.service;
 
+import com.example.classflow.exception.ResourceNotFoundException; // ResourceNotFoundException 임포트
 import com.example.classflow.student.entity.Student;
 import com.example.classflow.student.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,8 @@ public class StudentService {
     }
 
     public Student updateStudent(Long id, Student studentDetails) {
-        Student student = studentRepository.findById(id).orElseThrow(() -> new RuntimeException("Student not found for this id :: " + id));
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found for this id :: " + id)); // 예외 변경
         student.setName(studentDetails.getName());
         student.setPhone(studentDetails.getPhone());
         student.setMemo(studentDetails.getMemo());
@@ -35,7 +37,8 @@ public class StudentService {
     }
 
     public void deleteStudent(Long id) {
-        Student student = studentRepository.findById(id).orElseThrow(() -> new RuntimeException("Student not found for this id :: " + id));
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found for this id :: " + id)); // 예외 변경
         studentRepository.delete(student);
     }
 }

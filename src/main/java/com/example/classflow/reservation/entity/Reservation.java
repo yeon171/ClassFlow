@@ -1,5 +1,6 @@
 package com.example.classflow.reservation.entity;
 
+import com.example.classflow.student.entity.Student; // Student 엔티티 임포트
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,4 +28,8 @@ public class Reservation {
     private String memo; // 예약 특이사항
 
     private String status; // 예약 상태 (예: PENDING, CONFIRMED, CANCELLED)
+
+    @ManyToOne(fetch = FetchType.LAZY) // ManyToOne 관계 설정
+    @JoinColumn(name = "student_id") // 외래 키 컬럼 지정
+    private Student student; // Student 엔티티 참조
 }
